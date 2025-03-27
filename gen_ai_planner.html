@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gen AI Engineering Learning Planner v3</title>
+    <style>
+        /* ... (Keep previous CSS styles from v2) ... */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .container {
+            max-width: 950px;
+            margin: auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        h1 {
+             color: #00509e;
+             text-align: center;
+             margin-bottom: 25px;
+        }
+        h2 {
+            color: #00509e;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 8px;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li.task-item {
+            background: #fff;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative; /* Needed for absolute positioning of timer button */
+        }
+        li.task-item:hover {
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .task-header {
+            display: flex;
+            align-items: center;
+            /* cursor: pointer; */ /* Removed cursor pointer from whole header */
+            padding-right: 100px; /* Make space for timer button */
+        }
+        input[type="checkbox"] {
+            margin-right: 15px;
+            transform: scale(1.3);
+            cursor: pointer;
+            accent-color: #007bff; /* Modern checkbox color */
+        }
+        label {
+            flex-grow: 1;
+            /* cursor: pointer; */ /* Removed cursor pointer from label */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+        }
+        label .task-content { /* Wrapper for task text */
+             margin-right: 10px;
+        }
+        label .task-details {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; /* Prevent details from shrinking too much */
+        }
+        label .task-time {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-left: 15px;
+            font-style: italic;
+        }
+        label .task-points {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #495057;
+            background-color: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 15px;
+            white-space: nowrap;
+        }
+        input[type="checkbox"]:checked ~ .task-header label .task-content {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        input[type="checkbox"]:checked ~ .task-header label .task-points {
+            background-color: #dcedc8; /* Light green when done */
+            color: #333;
+        }
+        input[type="checkbox"]:checked ~ .learning-links,
+        input[type="checkbox"]:checked ~ .timer-controls { /* Fade timer if task checked */
+             opacity: 0.7;
+        }
+
+        /* Timer Button Styles */
+         .timer-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+         }
+        .timer-btn {
+            padding: 5px 10px;
+            font-size: 0.85em;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .timer-btn.start {
+            background-color: #28a745;
+            color: white;
+            border-color: #218838;
+        }
+         .timer-btn.start:hover {
+             background-color: #218838;
+         }
+        .timer-btn.stop {
+            background-color: #dc3545;
+            color: white;
+            border-color: #c82333;
+        }
+         .timer-btn.stop:hover {
+             background-color: #c82333;
+         }
+         .timer-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.65;
+         }
+
+
+        /* Progress Bar & Score Styles (Keep from v2) */
+        .progress-container { margin-bottom: 25px; background: #e9ecef; border-radius: 25px; overflow: hidden; height: 30px; border: 1px solid #dee2e6; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #007bff, #0056b3); text-align: center; line-height: 30px; color: white; font-weight: bold; transition: width 0.6s ease-in-out; border-radius: 25px 0 0 25px; }
+        .progress-bar.completed { background: linear-gradient(90deg, #28a745, #218838); border-radius: 25px; }
+        .score { text-align: right; font-weight: bold; margin-bottom: 10px; font-size: 1.1em; color: #00509e; }
+
+        /* Learning Links & Notes (Keep from v2) */
+        .note { font-size: 0.95em; color: #6c757d; margin-top: -10px; margin-bottom: 15px; padding-left: 5px; }
+        .learning-links { margin-top: 12px; margin-left: 35px; border-left: 2px solid #e0e0e0; padding-left: 15px; }
+        .learning-links h4 { margin-top: 0; margin-bottom: 8px; font-size: 0.9em; font-weight: 600; color: #343a40; }
+        .learning-links ul { list-style: disc; padding-left: 20px; }
+        .learning-links li { margin-bottom: 5px; font-size: 0.9em; }
+        a { color: #007bff; text-decoration: none; transition: color 0.2s ease; }
+        a:hover { color: #0056b3; text-decoration: underline; }
+        .phase { margin-top: 30px; }
+        .disclaimer { font-size: 0.85em; color: #6c757d; margin-top: 30px; text-align: center; }
+
+        /* Log Area Styles */
+        #log-area {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        #log-area h2 {
+            margin-bottom: 15px;
+        }
+        #log-list {
+            list-style: none;
+            padding: 0;
+            max-height: 400px; /* Limit height and make scrollable */
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        #log-list li {
+            padding: 10px;
+            border-bottom: 1px dashed #dee2e6;
+            font-size: 0.9em;
+        }
+         #log-list li:last-child {
+            border-bottom: none;
+         }
+         #log-list strong {
+            color: #00509e;
+         }
+         #log-list .log-meta {
+            font-size: 0.8em;
+            color: #6c757d;
+            display: block;
+            margin-top: 3px;
+         }
+          #log-list .log-comment {
+             margin-top: 5px;
+             margin-left: 10px;
+             font-style: italic;
+             color: #343a40;
+             white-space: pre-wrap; /* Preserve comment formatting */
+             word-wrap: break-word;
+          }
+          #clear-log-btn {
+             margin-top: 15px;
+             padding: 8px 15px;
+             font-size: 0.9em;
+             background-color: #ffc107;
+             color: #333;
+             border: 1px solid #e0a800;
+             border-radius: 5px;
+             cursor: pointer;
+             transition: background-color 0.2s ease;
+          }
+           #clear-log-btn:hover {
+             background-color: #e0a800;
+          }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Your Gen AI Engineering Learning Path 🚀</h1>
+        <p class="note">Track your progress building Gen AI skills. Use the timer for focused sessions, check off tasks, earn points, and explore the resources!</p>
+        <p class="disclaimer"><strong>Note:</strong> Time estimates are guides. Logged time is saved in your browser only.</p>
+
+        <div class="score">Total Points Earned: <span id="score">0</span> / <span id="total-possible-points">0</span></div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+
+        <!-- Phase 1: Foundations -->
+        <div class="phase">
+            <h2>Phase 1: Foundations (The Bedrock)</h2>
+            <ul>
+                <li class="task-item" data-task-id="task1" data-task-name="🐍 Master Python Basics">
+                    <input type="checkbox" id="task1" data-points="10">
+                    <div class="task-header">
+                        <label for="task1">
+                            <span class="task-content">🐍 Master Python Basics (Variables, data types, lists, dicts, loops, functions, classes)</span>
+                            <span class="task-details">
+                                <span class="task-time">~ 4-8 hours</span>
+                                <span class="task-points">10 pts</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task1')">⏱️ Start</button>
+                    </div>
+                    <div class="learning-links">
+                        <h4>Resources:</h4>
+                        <ul>
+                            <li><a href="https://youtu.be/rfscVS0vtbw" target="_blank">📺 freeCodeCamp - Python for Beginners (Full Course)</a></li>
+                            <li><a href="https://www.w3schools.com/python/" target="_blank">📄 W3Schools Python Tutorial (Reference)</a></li>
+                            <li><a href="https://docs.python.org/3/tutorial/" target="_blank">📄 Python Official Tutorial (In-depth)</a></li>
+                        </ul>
+                    </div>
+                </li>
+                 <li class="task-item" data-task-id="task2" data-task-name="📦 Learn Python Package Management">
+                    <input type="checkbox" id="task2" data-points="5">
+                     <div class="task-header">
+                        <label for="task2">
+                            <span class="task-content">📦 Learn Python Package Management (`pip`, `venv`)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 1-2 hours</span>
+                                <span class="task-points">5 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task2')">⏱️ Start</button>
+                    </div>
+                    <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                            <li><a href="https://youtu.be/KXVZyKI3kA" target="_blank">📺 Corey Schafer - Python Virtual Environments (venv)</a></li>
+                            <li><a href="https://packaging.python.org/en/latest/tutorials/installing-packages/" target="_blank">📄 Python Packaging Guide - Installing Packages</a></li>
+                            <li><a href="https://docs.python.org/3/library/venv.html" target="_blank">📄 Python Docs - `venv`</a></li>
+                        </ul>
+                    </div>
+                </li>
+                 <li class="task-item" data-task-id="task3" data-task-name="🧠 Understand Core AI/ML Concepts">
+                    <input type="checkbox" id="task3" data-points="5">
+                     <div class="task-header">
+                        <label for="task3">
+                            <span class="task-content">🧠 Understand Core AI/ML Concepts (LLM, Training vs Inference, API)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 1-2 hours</span>
+                                <span class="task-points">5 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task3')">⏱️ Start</button>
+                    </div>
+                     <div class="learning-links">
+                         <h4>Resources:</h4>
+                         <ul>
+                            <li><a href="https://youtu.be/zjkBMFhNj_g" target="_blank">📺 Google - What are Large Language Models (LLMs)?</a></li>
+                            <li><a href="https://youtu.be/RkdoQW-1_iI" target="_blank">📺 AWS - What is an API?</a></li>
+                            <li><a href="https://developers.google.com/machine-learning/glossary" target="_blank">📄 Google Machine Learning Glossary</a></li>
+                            <li><a href="https://www.ibm.com/topics/large-language-models" target="_blank">📄 IBM - What are LLMs? (Text overview)</a></li>
+                        </ul>
+                    </div>
+                </li>
+                 <li class="task-item" data-task-id="task4" data-task-name="⚙️ Set up Google AI Studio & API Key">
+                    <input type="checkbox" id="task4" data-points="5">
+                     <div class="task-header">
+                        <label for="task4">
+                            <span class="task-content">⚙️ Set up Google AI Studio & Get API Key (Gemini API)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 30-60 mins</span>
+                                <span class="task-points">5 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                     <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task4')">⏱️ Start</button>
+                    </div>
+                      <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                             <li><a href="https://aistudio.google.com/" target="_blank">🔗 Google AI Studio</a></li>
+                            <li><a href="https://ai.google.dev/tutorials/get_started_web" target="_blank">📄 Google AI - Get Started with Gemini (Web/API Key)</a></li>
+                             <li><a href="https://youtu.be/COCisz5eJfk" target="_blank">📺 Google for Developers - Get Started with the Gemini API</a></li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Phase 2: Core Gen AI Components -->
+        <div class="phase">
+            <h2>Phase 2: Core Gen AI Components (Focus: Google AI)</h2>
+             <ul>
+                 <li class="task-item" data-task-id="task5" data-task-name="💬 Interact with Gemini LLM">
+                    <input type="checkbox" id="task5" data-points="15">
+                     <div class="task-header">
+                        <label for="task5">
+                            <span class="task-content">💬 Interact with Gemini LLM (Google AI Python SDK)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 2-4 hours</span>
+                                <span class="task-points">15 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task5')">⏱️ Start</button>
+                    </div>
+                     <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                            <li><a href="https://ai.google.dev/tutorials/python_quickstart" target="_blank">📄 Google AI - Python Quickstart (Gemini)</a></li>
+                             <li><a href="https://github.com/google/generative-ai-python" target="_blank">🔗 Google Generative AI Python SDK (GitHub)</a></li>
+                             <li><a href="https://youtu.be/EM4n2yTA0Kw" target="_blank">📺 Jeff Heaton - Intro to Google Gemini Pro API with Python</a></li>
+                        </ul>
+                    </div>
+                </li>
+                  <li class="task-item" data-task-id="task6" data-task-name="🔢 Generate Embeddings (Google AI)">
+                    <input type="checkbox" id="task6" data-points="15">
+                     <div class="task-header">
+                        <label for="task6">
+                            <span class="task-content">🔢 Understand & Generate Embeddings (Google AI Embeddings)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 2-4 hours</span>
+                                <span class="task-points">15 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task6')">⏱️ Start</button>
+                    </div>
+                     <div class="learning-links">
+                         <h4>Resources:</h4>
+                         <ul>
+                             <li><a href="https://youtu.be/CJKnsc4ojuM" target="_blank">📺 Google AI - Introduction to Embeddings</a></li>
+                            <li><a href="https://ai.google.dev/docs/embeddings_guide" target="_blank">📄 Google AI - Embeddings Guide</a></li>
+                             <li><a href="https://ai.google.dev/tutorials/python_embeddings_quickstart" target="_blank">📄 Google AI - Python Embeddings Quickstart</a></li>
+                             <li><a href="https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture" target="_blank">📺 Google ML Crash Course - Embeddings Explained</a></li>
+                        </ul>
+                    </div>
+                </li>
+                 <li class="task-item" data-task-id="task7" data-task-name="💾 Learn Basic Vector Databases">
+                    <input type="checkbox" id="task7" data-points="20">
+                     <div class="task-header">
+                        <label for="task7">
+                            <span class="task-content">💾 Learn Basic Vector Databases (`ChromaDB` or `FAISS` basics)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 3-5 hours</span>
+                                <span class="task-points">20 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task7')">⏱️ Start</button>
+                    </div>
+                      <div class="learning-links">
+                         <h4>Resources:</h4>
+                         <ul>
+                             <li><a href="https://youtu.be/QSWWyCMI6fs" target="_blank">📺 AssemblyAI - What is a Vector Database?</a></li>
+                             <li><a href="https://docs.trychroma.com/getting-started" target="_blank">📄 ChromaDB Docs - Getting Started</a></li>
+                             <li><a href="https://youtu.be/ssaOsOBuSCE" target="_blank">📺 James Briggs - Chroma DB Crash Course</a></li>
+                             <li><a href="https://github.com/facebookresearch/faiss/wiki/Getting-started" target="_blank">📄 FAISS Wiki - Getting Started</a></li>
+                        </ul>
+                    </div>
+                </li>
+                 <li class="task-item" data-task-id="task8" data-task-name="✍️ Basic Prompt Engineering for RAG">
+                    <input type="checkbox" id="task8" data-points="10">
+                     <div class="task-header">
+                        <label for="task8">
+                            <span class="task-content">✍️ Basic Prompt Engineering for RAG (Context, Instructions, Question)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 1-3 hours</span>
+                                <span class="task-points">10 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task8')">⏱️ Start</button>
+                    </div>
+                     <div class="learning-links">
+                         <h4>Resources:</h4>
+                         <ul>
+                             <li><a href="https://ai.google.dev/docs/prompt_best_practices" target="_blank">📄 Google AI - Prompt Design Best Practices</a></li>
+                             <li><a href="https://youtu.be/d_yp4wYNaHo" target="_blank">📺 DeepLearning.AI - Prompt Engineering for Developers (Short Course Sampler)</a></li>
+                             <li><a href="https://www.promptingguide.ai/techniques/rag" target="_blank">📄 Prompting Guide - Retrieval Augmented Generation (RAG)</a></li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Phase 3: Build Your RAG Chatbot -->
+        <div class="phase">
+            <h2>Phase 3: Build Your First RAG Chatbot (Google AI + Vector DB)</h2>
+             <p class="note">Apply the concepts using Google AI for generation/embeddings.</p>
+              <ul>
+                  <li class="task-item" data-task-id="task9" data-task-name="📄 Choose & Prepare Data">
+                    <input type="checkbox" id="task9" data-points="10">
+                     <div class="task-header">
+                        <label for="task9">
+                            <span class="task-content">📄 Choose & Prepare Your Data (Load text/PDF, basic cleaning)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 1-2 hours</span>
+                                <span class="task-points">10 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                     <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task9')">⏱️ Start</button>
+                    </div>
+                      <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                            <li><a href="https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files" target="_blank">📄 Python Docs - Reading/Writing Files</a></li>
+                            <li><a href="https://pypi.org/project/PyPDF2/" target="_blank">🔗 PyPDF2 Library (for PDFs)</a></li>
+                        </ul>
+                    </div>
+                </li>
+                 <li class="task-item" data-task-id="task10" data-task-name="✂️ Implement Text Chunking">
+                    <input type="checkbox" id="task10" data-points="15">
+                     <div class="task-header">
+                        <label for="task10">
+                            <span class="task-content">✂️ Implement Text Chunking (Split data into smaller pieces)</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 1-3 hours</span>
+                                <span class="task-points">15 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task10')">⏱️ Start</button>
+                    </div>
+                     <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                             <li><a href="https://youtu.be/8OJCZwyXNos" target="_blank">📺 James Briggs - Guide To Text Splitting</a></li>
+                            <li>(Simple strategies: Split by paragraph `\n\n`, fixed character count)</li>
+                            <li><a href="https://python.langchain.com/docs/modules/data_connection/document_transformers/" target="_blank">📄 LangChain Text Splitters (Concepts)</a></li>
+                        </ul>
+                    </div>
+                </li>
+                  <li class="task-item" data-task-id="task11" data-task-name="⚙️ Create Indexing Pipeline">
+                    <input type="checkbox" id="task11" data-points="25">
+                     <div class="task-header">
+                        <label for="task11">
+                            <span class="task-content">⚙️ Create Indexing Pipeline (Load -> Chunk -> Embed(Google) -> Store(Chroma/FAISS))</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 3-5 hours</span>
+                                <span class="task-points">25 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task11')">⏱️ Start</button>
+                    </div>
+                      <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                             <li>(Combine knowledge from Tasks 6, 7, 9, 10)</li>
+                             <li><a href="https://ai.google.dev/tutorials/python_embeddings_quickstart" target="_blank">📄 Google AI - Python Embeddings Quickstart</a></li>
+                             <li><a href="https://docs.trychroma.com/usage-guide" target="_blank">📄 ChromaDB Usage Guide</a></li>
+                        </ul>
+                    </div>
+                </li>
+                  <li class="task-item" data-task-id="task12" data-task-name="🚀 Create Query Pipeline">
+                    <input type="checkbox" id="task12" data-points="35">
+                     <div class="task-header">
+                        <label for="task12">
+                            <span class="task-content">🚀 Create Query Pipeline (Query -> Embed(Google) -> Search(DB) -> Prompt -> LLM(Gemini))</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 4-6 hours</span>
+                                <span class="task-points">35 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task12')">⏱️ Start</button>
+                    </div>
+                     <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                             <li>(Combine knowledge from Tasks 5, 6, 7, 8)</li>
+                             <li><a href="https://ai.google.dev/tutorials/python_quickstart" target="_blank">📄 Google AI - Python Quickstart (Gemini)</a></li>
+                             <li><a href="https://youtu.be/cFkcXlhbL2M" target="_blank">📺 Samson Zhang - RAG from Scratch (Conceptual Walkthrough)</a></li>
+                             <li>(Refer back to Vector DB search methods)</li>
+                        </ul>
+                    </div>
+                </li>
+                 <li class="task-item" data-task-id="task13" data-task-name="🎨 Build Simple UI">
+                    <input type="checkbox" id="task13" data-points="20">
+                     <div class="task-header">
+                        <label for="task13">
+                            <span class="task-content">🎨 Build a Simple UI (`Streamlit` or `Gradio`) - Optional</span>
+                             <span class="task-details">
+                                <span class="task-time">~ 2-4 hours</span>
+                                <span class="task-points">20 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                      <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task13')">⏱️ Start</button>
+                    </div>
+                     <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                            <li><a href="https://youtu.be/VqgUkExBIO4" target="_blank">📺 Streamlit - Official Crash Course</a></li>
+                             <li><a href="https://youtu.be/RiCQzBluTxk" target="_blank">📺 freeCodeCamp - Gradio Course</a></li>
+                            <li><a href="https://docs.streamlit.io/get-started/tutorials/create-an-app" target="_blank">📄 Streamlit - Create an App Tutorial</a></li>
+                            <li><a href="https://www.gradio.app/guides/quickstart" target="_blank">📄 Gradio Quickstart Guide</a></li>
+                        </ul>
+                    </div>
+                </li>
+                  <li class="task-item" data-task-id="task14" data-task-name="🧪 Experiment & Iterate">
+                    <input type="checkbox" id="task14" data-points="15">
+                     <div class="task-header">
+                        <label for="task14">
+                            <span class="task-content">🧪 Experiment & Iterate (Chunk sizes, models, prompts)</span>
+                             <span class="task-details">
+                                <span class="task-time">Ongoing</span>
+                                <span class="task-points">15 pts</span>
+                            </span>
+                        </label>
+                     </div>
+                       <div class="timer-controls">
+                         <button class="timer-btn start" onclick="toggleTimer('task14')">⏱️ Start</button>
+                    </div>
+                       <div class="learning-links">
+                         <h4>Resources:</h4>
+                        <ul>
+                             <li>(Review results, try different parameters in your scripts)</li>
+                             <li><a href="https://ai.google.dev/docs/prompt_best_practices" target="_blank">📄 Google AI - Prompt Design Best Practices</a></li>
+                             <li><a href="https://ai.google.dev/models/gemini" target="_blank">📄 Google AI - Gemini Models Overview</a> (Check different model capabilities)</li>
+                        </ul>
+                    </div>
+                </li>
+              </ul>
+        </div>
+
+        <!-- Phase 4 & 5 (Keep structure, update links if needed - less critical now) -->
+        <!-- ... Previous content for Phase 4 and Phase 5 ... -->
+        <!-- Example update for IBM course link if desired -->
+        <!-- <li class="task-item" data-task-id="task21" data-task-name="🎓 Complete IBM Watsonx Basics">
+             ...
+             <div class="learning-links">
+                 <h4>Resources:</h4>
+                 <ul>
+                     <li><a href="https://learn.ibm.com/course/view.php?id=11813" target="_blank">🔗 IBM Training - Watsonx.ai Essentials</a></li>
+                     <li><a href="https://www.ibm.com/products/watsonx-ai" target="_blank">📄 IBM Watsonx.ai Overview</a></li>
+                 </ul>
+             </div>
+         </li> -->
+
+
+        <!-- Learning Log Area -->
+        <div id="log-area">
+            <h2>Learning Log</h2>
+            <ul id="log-list">
+                <!-- Log entries will be added here by JavaScript -->
+            </ul>
+             <button id="clear-log-btn" onclick="clearLog()">Clear Entire Log</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- State Variables ---
+        let activeTimerTaskId = null;
+        let timerStartTime = null;
+        const LOG_STORAGE_KEY = 'genAiPlannerLog';
+
+        // --- DOM Elements ---
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const scoreElement = document.getElementById('score');
+        const progressBarElement = document.getElementById('progress-bar');
+        const totalPossiblePointsElement = document.getElementById('total-possible-points');
+        const logListElement = document.getElementById('log-list');
+        const timerButtons = document.querySelectorAll('.timer-btn');
+
+
+        // --- Initialization ---
+        let totalTasks = checkboxes.length;
+        let totalPossiblePoints = 0;
+
+        checkboxes.forEach(checkbox => {
+            const points = parseInt(checkbox.getAttribute('data-points') || 0);
+            const labelText = checkbox.closest('.task-item').querySelector('label .task-content').textContent;
+            // Exclude repeatable tasks from max score denominator
+            if (!labelText.includes('Ongoing') && !labelText.includes('Repeatable')) {
+                 totalPossiblePoints += points;
+            }
+        });
+        totalPossiblePointsElement.textContent = totalPossiblePoints;
+
+        // --- Core Functions ---
+
+        function updateProgress() {
+            let completedTasks = 0;
+            let currentScore = 0;
+
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    completedTasks++;
+                    currentScore += parseInt(checkbox.getAttribute('data-points') || 0);
+                }
+            });
+
+            const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            scoreElement.textContent = currentScore;
+            progressBarElement.style.width = percentage + '%';
+            progressBarElement.textContent = percentage + '%';
+            progressBarElement.classList.remove('completed');
+
+            if (percentage === 100) {
+                 progressBarElement.classList.add('completed');
+                 progressBarElement.textContent = '🎉 Complete! 🎉';
+            }
+        }
+
+        function formatDuration(ms) {
+            if (ms < 0) ms = 0;
+            const seconds = Math.floor((ms / 1000) % 60);
+            const minutes = Math.floor((ms / (1000 * 60)) % 60);
+            const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+
+            const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+            const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+
+            if (hours > 0) {
+                const formattedHours = hours < 10 ? '0' + hours : hours;
+                return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+            } else {
+                 return `${formattedMinutes}:${formattedSeconds}`;
+            }
+        }
+
+         function getLogs() {
+            const logsJson = localStorage.getItem(LOG_STORAGE_KEY);
+            return logsJson ? JSON.parse(logsJson) : [];
+        }
+
+        function saveLogs(logs) {
+            localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+        }
+
+        function addLogEntry(entry) {
+            const logs = getLogs();
+            logs.push(entry);
+            saveLogs(logs);
+            displayLogEntry(entry); // Add to UI immediately
+        }
+
+        function displayLogEntry(entry) {
+             const li = document.createElement('li');
+             const taskName = entry.taskName || `Task ID: ${entry.taskId}`; // Fallback
+             const durationFormatted = formatDuration(entry.duration);
+             const timestampFormatted = new Date(entry.timestamp).toLocaleString();
+
+             li.innerHTML = `
+                <strong>${taskName}</strong>
+                <span class="log-meta">Duration: ${durationFormatted} | Logged: ${timestampFormatted}</span>
+                ${entry.comments ? `<div class="log-comment">${escapeHtml(entry.comments)}</div>` : ''}
+            `;
+             // Prepend to show newest first
+             logListElement.insertBefore(li, logListElement.firstChild);
+        }
+
+        function loadLogFromStorage() {
+            const logs = getLogs();
+             logListElement.innerHTML = ''; // Clear existing list first
+            // Display in reverse chronological order (newest first)
+            logs.slice().reverse().forEach(displayLogEntry);
+        }
+
+        function clearLog() {
+            if (confirm('Are you sure you want to clear the entire learning log? This cannot be undone.')) {
+                 localStorage.removeItem(LOG_STORAGE_KEY);
+                 logListElement.innerHTML = ''; // Clear UI
+                 alert('Learning log cleared.');
+            }
+        }
+
+        // Simple HTML escaping function
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // --- Timer Logic ---
+
+        function toggleTimer(taskId) {
+            const button = document.querySelector(`.task-item[data-task-id="${taskId}"] .timer-btn`);
+            const taskItem = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+            const taskName = taskItem.getAttribute('data-task-name') || taskId;
+
+            if (activeTimerTaskId === null) { // Start timer
+                if (timerStartTime) { // Safety check if something went wrong
+                    console.warn("Timer inconsistency detected. Resetting.");
+                    resetAllTimerButtons();
+                }
+                activeTimerTaskId = taskId;
+                timerStartTime = Date.now();
+                button.textContent = '⏹️ Stop & Log';
+                button.classList.remove('start');
+                button.classList.add('stop');
+
+                // Disable other start buttons
+                timerButtons.forEach(btn => {
+                    if (btn !== button) {
+                        btn.disabled = true;
+                    }
+                });
+
+            } else if (activeTimerTaskId === taskId) { // Stop timer
+                const duration = Date.now() - timerStartTime;
+                const comments = prompt(`Log session for "${taskName}" (Duration: ${formatDuration(duration)}). Add comments (optional):`);
+
+                const logEntry = {
+                    taskId: taskId,
+                    taskName: taskName,
+                    timestamp: Date.now(),
+                    duration: duration,
+                    comments: comments || '' // Store empty string if no comment
+                };
+                addLogEntry(logEntry);
+
+                // Reset timer state
+                activeTimerTaskId = null;
+                timerStartTime = null;
+                resetAllTimerButtons();
+
+            } else { // Trying to start another timer while one is active
+                alert('Another timer is already running. Please stop it before starting a new one.');
+            }
+        }
+
+         function resetAllTimerButtons() {
+             timerButtons.forEach(btn => {
+                btn.textContent = '⏱️ Start';
+                btn.classList.remove('stop');
+                btn.classList.add('start');
+                btn.disabled = false; // Re-enable all buttons
+             });
+             activeTimerTaskId = null;
+             timerStartTime = null;
+         }
+
+
+        // --- Event Listeners ---
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateProgress);
+        });
+
+        // --- Initial Load ---
+        updateProgress();
+        loadLogFromStorage(); // Load logs when the page loads
+
+    </script>
+
+</body>
+</html>
